@@ -38,9 +38,14 @@ class Location(Player):
     def __init__(self):
         self.action = 0
         self.where = "Room"
+        self.first_time = True
 
     def check_bedroom(self):
-        print("You looked around your room. There's your bed, your pet snake Monty's tank, and your desk.")
+        if self.first_time:
+            print("You looked around your room. There's your bed, your pet snake Monty's tank, and your desk.")
+            self.first_time = False
+        else:
+            print("You are back at the center of your room.")
         self.action = input("""
         pick an action:
         [1]check desk       [4]go to kitchen/living room
@@ -60,31 +65,51 @@ class Location(Player):
             elif self.action == 5:
                 print("you stared at the ceiling.")
                 event.time_change(15)
-                print("the current time is: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
+                print("current time: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
             elif self.action == 6:
                 print("you stare intensively at the ceiling,reflecting on your life")
-                print("the current time is: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
+                print("current time: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
                 event.time_change(30)
         except ValueError:
             print('please enter a valid response')
 
     def desk(self):
         print("Your computer is on. It's on almost 24/7.")
-        self.action = input("""
+        action = input("""
         pick an action:
         [1]check social media        [4]walk away
         [2]check news                [5]"..."
         [3]check message board       [6]"......"
         """)
-    
+        actions = {
+            '1': 'social_media()',
+            '2': 'news()',
+            '3': 'message_board()',
+            '4': self.check_bedroom()
+        }
+        return actions[action]
+
     def bed(self):
-        print("Your computer is on. It's on almost 24/7.")
-        self.action = input("""
+        print("Your bed is messy. You should probably make your bed.")
+        action = input("""
         pick an action:
-        [1]check social media        [4]walk away
-        [2]check news                [5]"..."
-        [3]check message board       [6]"......"
+        [1]sleep                  [3]"..."
+        [2]make bed               [4]"......"
         """)
+        if action == '1':
+            #return sleep()
+            pass
+        elif action == '2':
+            #return make_bed()
+            pass
+        elif action == '3':
+            print('you stare at your bed')
+            event.time_change(15)
+            print("current time: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
+        elif action == '4':
+            print('You stare at your bed intensively.')
+            event.time_change(30)
+            print("current time: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
     
     def tank(self):
         print("You look at the tank.")
@@ -107,7 +132,7 @@ clear()
 print("""
 
     ------------------------------------------------------------
-    You Woke Up In Your Room On A Staturday Morning
+        You Woke Up In Your Room On A Staturday Morning
     ------------------------------------------------------------
 
 
@@ -133,7 +158,5 @@ So it's time to go get some food, and probably grocery as well.
 It's time to step on a journey. A joureny to the grocery store.
 """)
 location.check_bedroom()
-print(location.action)
 
-print(location.where)
 x = input('current testing ends.press enter to exit.')
