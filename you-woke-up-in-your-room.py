@@ -13,12 +13,24 @@ class GlobalVariables:
         # format : 800 8 am 1230 12:30 pm
 
     def time_change(self, number):
-        self.time += number
+        if int(str(self.time)[-2:]) + number >= 60:
+            hour = (int(str(self.time)[-2:]) + number) // 60
+            self.time += hour * 100 - number
+            #self.time += hour * 100 + int(str(self.time)[-2:]) - (int(str(self.time)[-2:]) + number)
+        else:
+            self.time += number
+        print("current time: {0} : {1}".format(str(self.time)[:-2],str(self.time)[-2:]))
         return self.time
     
     def sanity_change(self, sanity, number):
         sanity += number
         return sanity
+    
+    def sanity_check(self, sanity):
+        if sanity < 80:
+            print('you feel a bit uneasy')
+        if sanity < 50:
+            print('You begin to question if everything until this point is normal.')
 
 class Player:
     def __init__(self, name):
@@ -52,26 +64,26 @@ class Location(Player):
         [2]check bed        [5]"..."
         [3]check tank       [6]"......"
         """)
-        try:
-            self.action = int(self.action)
-            if self.action == 1:
-                return self.desk()
-            elif self.action == 2:
-                return self.bed()
-            elif self.action == 3:
-                return self.tank()
-            elif self.action == 4:
-                print("you moved to the kitchen/living room")
-            elif self.action == 5:
-                print("you stared at the ceiling.")
-                event.time_change(15)
-                print("current time: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
-            elif self.action == 6:
-                print("you stare intensively at the ceiling,reflecting on your life")
-                print("current time: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
-                event.time_change(30)
-        except ValueError:
+        self.action = int(self.action)
+        if self.action == 1:
+            return self.desk()
+        elif self.action == 2:
+            return self.bed()
+        elif self.action == 3:
+            return self.tank()
+        elif self.action == 4:
+            print("you moved to the kitchen/living room")
+        elif self.action == 5:
+            print("you stared at the ceiling.")
+            event.time_change(15)
+            return self.check_bedroom()
+        elif self.action == 6:
+            print("you stare intensively at the ceiling,reflecting on your life")
+            event.time_change(30)
+            return self.check_bedroom()
+        else:
             print('please enter a valid response')
+            return self.check_bedroom()
 
     def desk(self):
         print("Your computer is on. It's on almost 24/7.")
@@ -81,13 +93,26 @@ class Location(Player):
         [2]check news                [5]"..."
         [3]check message board       [6]"......"
         """)
-        actions = {
-            '1': 'social_media()',
-            '2': 'news()',
-            '3': 'message_board()',
-            '4': self.check_bedroom()
-        }
-        return actions[action]
+        action = int(action)
+        if action == 1:
+            pass
+        elif action == 2:
+            pass
+        elif action == 3:
+            pass
+        elif action == 4:
+            return self.check_bedroom()
+        elif action == 5:
+            print("you stared at the ceiling.")
+            event.time_change(15)
+            return self.desk()
+        elif action == 6:
+            print("you stare intensively at the ceiling,reflecting on your life")
+            event.time_change(30)
+            return self.desk()
+        else:
+            print('please enter a valid response')
+            return self.desk()
 
     def bed(self):
         print("Your bed is messy. You should probably make your bed.")
@@ -105,12 +130,10 @@ class Location(Player):
         elif action == '3':
             print('you stare at your bed')
             event.time_change(15)
-            print("current time: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
         elif action == '4':
             print('You stare at your bed intensively.')
             event.time_change(30)
-            print("current time: {0} : {1}".format(str(event.time)[:-2],str(event.time)[-2:]))
-    
+
     def tank(self):
         print("You look at the tank.")
         self.action = input("""
@@ -145,12 +168,11 @@ player = Player(name)
 location = Location()
 event = GlobalVariables()
 
-yes_or_no = input('Your character name is {0}, right? (Y/N) '.format(player.name)).upper()
-while yes_or_no == 'N':
+name_confirm = input('Your character name is {0}, right? (Y/N) '.format(player.name)).upper()
+while name_confirm == 'N':
     player.name = input("Name your character ")
-    yes_or_no = input('Your character name is {0}, right? (Y/N)'.format(player.name)).upper()
+    name_confirm = input('Your character name is {0}, right? (Y/N)'.format(player.name)).upper()
 clear()
-print('Your Journey begins here.')
 print("""
 You woke up in your room.
 It's currently early morning on a Saturday. Your stomach rumbles. It's time for breakfast.... Well, only if you didn't run out of food. You probably should stay on top of your grocery shopping.
