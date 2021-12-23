@@ -47,6 +47,7 @@ class GlobalVariables:
             print("Your stomach rumbles a bit.")
         elif hunger > 0:
             print("You feel less hungry now.")
+        #remove the line below after finish debugging
         print("Hunger level:", player.hunger_level, "self.start_time value:", self.start_time)
         if player.hunger_level <= 0:
             self.is_ending = True
@@ -62,6 +63,7 @@ class GlobalVariables:
 
     def sanity_check(self, number):
         player.sanity += number
+        #remove the line below after finish debugging
         print("Current Sanity:", player.sanity)
         if player.sanity < 80:
             print('you feel a bit uneasy')
@@ -259,9 +261,9 @@ class Apartment:
                 print("You are now in your kitchen/living room.")
             action = input("""
         pick an action:
-        [1]check the fridge               [4]leave apartment
-        [2]go to bathroom                 [5]"..."
-        [3]go to bedroom                  [6]"......"
+        [1]check the fridge                   [4]leave the apartment
+        [2]go to the bathroom                 [5]"..."
+        [3]go to the bedroom                  [6]"......"
             """)
             if action == '1':
                 return self.fridge()
@@ -377,7 +379,7 @@ class Apartment:
                     if eat_mice == "Y":
                         print("You cooked the mice and ate them. It was a very unpleasant feeling.")
                         event.sanity_check(-50) 
-                        hunger_level(50)
+                        event.hunger_level(50)
                         self.ate_mice = True
                     elif eat_mice == "N":
                         print("That was some ridiculous thoughts. You wouldn't have done it even if you're too hungry, right?")
@@ -446,7 +448,10 @@ class Street(Location):
             "Do we believe in the afterlife? Yes and no. The world is born from the void. Once we perish, we will return to the void. Our minds and souls, to be exact.",
             "We are selective of our members. While we want to spread the knowledge, only the selected few can join us and oversee the progression of the world's end."
             ]
-        self.is_cult_scared = False 
+        self.cult_dialogue_counter = 0
+        self.cult_intimidation = 0
+        self.cult_interrupted = False
+        self.cult_uneasy = 0
 
     def walking(self):
         while event.is_ending == False:
@@ -487,8 +492,14 @@ class Street(Location):
 
     def midway(self):
         while event.is_ending == False:
-            if not self.first_time_cult:
+            if not self.first_time_cult and self.cult_intimidation < 10:
                 print('You see a couple of people standing on the sidewalk. They all wear robes for some reason. There are some signs next to them.')
+            elif  self.cult_intimidation >= 10:
+                print('This group of people is intimidated by your silent stares, but no one wants to be the one to tell you to leave.')
+            elif self.cult_interrupted == True:
+                print('This group of people is still here. They gave you a weird look.')
+            elif store.went_to_store:
+                print('On your way home, the group of people is still here.')
             else:
                 print("A mysterious group of people is standing here with signs next to them.")
             action = input("""
@@ -500,7 +511,11 @@ class Street(Location):
             action = int(action)
             if action == 1:
                 print('"The world will end soon! The entropy of the universe is approaching its limits, and your actions only escalate the process." \n "Join us. We will face the end together, and we will meet again in the void."')
-                print("One of the people notices you are reading the sign.")
+                if self.read_sign == False:
+                    if self.cult_intimidation < 10:
+                        print("One of the people notices you are reading the sign.")
+                    else:
+                        print("One of them wants to start a conversation, but they are too scared to talk to you.")
                 self.read_sign = True
                 event.time_change(5)
                 return self.midway()
@@ -515,17 +530,37 @@ class Street(Location):
                 pass 
             elif action == 4:
                 if self.read_sign == False:
-                    print('You gaze at the group. It doesn\'t seem that they want to enegage in conversations with you.')
+                    print('You gaze at the group. It doesn\'t seem that they want to enegage in conversations with you yet.')
                     event.time_change(5)
+                    return self.midway()
+                elif self.cult_intimidation >= 10 or self.cult_uneasy >= 4:
+                    print('The group of people seems to be intimidated by your silence. No one wants to talk to you.')
+                    return self.midway()
+                elif self.cult_interrupted == True:
+                    print('It doesn\'t seem like they want to talk to you anymore.')
                 else:
                     print("???: It seems that you are interested in our orginzation.")
-                    print("One of the members starts conversation with you.")
+                    print("One of the members starts a conversation with you.")
+                    return self.cult()
                 return self.midway()
             elif action == 5:
                 if self.read_sign == False:
-                    print('You stare at the group of people. They are trying their best to stay silent. One of them is visibly afraid of your attention.')
-                    event.time_change(10)
-                return self.midway()
+                    if (self.cult_intimidation < 10) or (self.cult_uneasy < 4):
+                        print('You stare at the group of people. They are trying their best to stay silent. One of them is visibly afraid the attention you are giving them.')
+                        self.cult_intimidation += 2
+                        event.time_change(10)
+                        return self.midway()
+                elif self.cult_intimidation >= 10 or (self.cult_uneasy >= 4):
+                        print('???: Can you... leave us alone, please?')
+                        print("One of the members finally speaks. His voice is shaking.")
+                        return self.midway()
+                elif self.cult_interrupted == True:
+                    print('It doesn\'t seem like they want to talk to you anymore.')
+                    return self.midway()
+                else:
+                    print("???: Are you... Interested in hearing about our cause?")
+                    print("One of the members hesitates before he talks to you.")
+                    return self.cult()
             else:
                 event.invalid_input()
                 return self.midway()
@@ -556,15 +591,81 @@ class Street(Location):
                     return home.check_kitchen() 
                 return 
             elif action == 3:
-                pass
+                print('You stand in the middle of the street, looking at people walking by.')
+                event.time_change(15)
+                return self.midway_evening()
             elif action == 4:
-                pass
+                print("You stare at the pedestrians. Some of them is put off by your stare.")
+                event.time_change(30)
+                return self.midway_evening()
             else:
                 event.invalid_input()
                 return self.midway_evening()
         event.check_ending()
+
     def cult(self):
-        pass
+        print("The member begins to tell you more about the cult.")
+        while (self.cult_dialogue_counter < len(self.cult_dialogue)): 
+            if self.cult_uneasy >= 4:
+                print('"……" the person took a step back as they stopped talking. "If you don\'t believe us or are in a hurry, you could\'ve let me know. I would have let you go…"')
+                return self.midway()
+                break
+            else:
+                print("???:", self.cult_dialogue[self.cult_dialogue_counter])
+                self.cult_dialogue_counter += 1
+                event.time_change(10)
+                action = input("""
+        Pick an action:
+        [1]Go home                      [3]"..."
+        [2]Go to the Grocery Store      [4]"......"
+                """)
+                if action == "1":
+                    print("You walk away from the enthuiastic member, they seem to be shocked by the fact that you just walked away.")
+                    print("You begin to head home.")
+                    self.cult_interrupted = True
+                    return home.check_kitchen()
+                    break
+                elif action == "2":
+                    print("You walk away from the enthuiastic member, they seem to be shocked by the fact that you just walked away.")
+                    print("You head to the grocery store.")
+                    self.cult_interrupted = True
+                    return store.grocery_store()
+                    break
+                elif action == "3":
+                    print("You continue to listen to them talking.")
+                elif action == "4":
+                    print("The person hesitates a bit, and then keep talking.")
+                    self.cult_uneasy += 1
+                else:
+                    event.invalid_input()
+                    return self.freezer()
+        if self.cult_dialogue_counter == 9:
+            if player.sanity <= 40:
+                print('"...!"')
+                print('The cult member notices and stops themselves from talking.')
+                print('"There is somthing in your eyes... I can see the void in your eyes!"')
+                print("\"In the propercy, it says a person with hollow eyes like your will lead us to the right way.\"")
+                print('"Please, you must join us and become our leader."')
+                become_cult_leader = input("Will you become their leader?(Y/N)").upper()
+                if become_cult_leader == "Y":
+                    print("You nod. The group seems happy.")
+                    event.is_ending = True
+                elif become_cult_leader == "N":
+                    print("You shake your head. The group seems disappointed, but they respect your decision.")
+                    print("???: If you ever change your mind, please come back and guide us...")
+                return self.cult()
+            else:
+                join_cult = input("Now that you have heard about our orginization, would you like to participate in our next meeting? It will happen soon. (Y/N)").upper()
+                if join_cult == 'Y':
+                    print("You nodded. They hand you a card ")
+                    event.is_ending = True
+                    return self.midway()
+                elif join_cult == 'N':
+                    print("You shake your head. \"Very well, but we will be here if you change your mind.\"")
+                    return self.midway()
+                else:
+                    event.invalid_input()
+                    return self.cult()
 
 
 #Grocery Store
@@ -623,27 +724,48 @@ class GroceryStore(Location):
                 print("You are now standing in front of the closed grocery store.")
                 action = input("""
         Pick an action:
-        [1]Go home     [5]"..."
-        [2]Walk home            [6]"......"
+        [1]Go home              [2]"..."
+                                [3]"......"
                 """)
+                action = int(action)
+                if action == 1:
+                    print("You decided to go home.")
+                    event.is_ending = True
+                    return self.grocery_store() 
+                elif action == 2:
+                    print("You gaze at the closed doors. The lights are off in the store.") 
+                    event.time_change(15)
+                    return self.grocery_store()
+                elif action == 3:
+                    print("You gaze at the closed doors. The lights are off in the store.")
+                    event.time_change(30)
+                    return self.grocery_store()
+                else:
+                    event.invalid_input()
+                    return self.grocery_store()
         event.check_ending()
 
 class Endings:
     def test_ending(self):
         print("Everything works until this point.")
+
     def normal_ending(self):
         #you get here if you act like a normal human: get ready for leaving, not join the cult, get grocery, and get home
         print("You arrived home with food. You then make and eat your meal. Another ordinary day has passed.")
+    def low_sanity(self):
+        print("You wander on the street. You survived today, but what about tomorrow?")
 
     def hunger(self):
-        print("You died of hunger.")
+        print("You died of starvation.")
 
     def hermit(self):
         print("You refused to leave your apartment for food. You managed to survive for the day, but at what costs? What about tomorrow?")
 
     def join_cult(self):
-        print("You follow ")
-    
+        print("You follow the group to a building. Inside the building, everyone sits in a circle and talk to each other.")
+        print("After some introduction, you are part of the orginization now. They also get you a nice meal.")
+        print("You don't have to worry about groceries for now.")
+
     def cult_leader(self):
         print('"We would like to introduce you to our new and only leader, {0}. Under their leadership, we will lead the world to salvation."'.format(player.name))
 
@@ -655,7 +777,7 @@ clear()
 print("""
 
     ------------------------------------------------------------
-        You Woke Up In Your Room On A Staturday Morning
+        You Woke Up In Your Room On A Saturday Morning
     ------------------------------------------------------------
 
 
@@ -679,8 +801,8 @@ clear()
 print("""
 You woke up in your room.
 It's currently early morning on a Saturday. Your stomach rumbles. It's time for breakfast.... Well, only if you didn't run out of food. You probably should stay on top of your grocery shopping.
-So it's time to go get some food, and probably grocery as well.
-It's time to step on a journey. A joureny to the grocery store.
+So it's time to get some food, and probably groceries as well.
+It's time to step on a journey—a journey to the grocery store.
 """)
 home.check_bedroom()
 
