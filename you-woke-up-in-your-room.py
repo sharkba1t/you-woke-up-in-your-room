@@ -1,7 +1,6 @@
-import random
 import os
 import sys
-#sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=32, cols=100))
+sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=30, cols=100))
 
 #For terminal
 clear = lambda: os.system('cls')
@@ -11,12 +10,19 @@ width, height = os.get_terminal_size()
 
 class GlobalVariables:
     def __init__(self):
-        self.location = "Room"
+        self.location = "apartment"
         self.time = 800
         # format : 800 8 am 1230 12:30 pm
-        self.is_ending = False
-        self.left_home = False
         self.start_time = 800
+        #ending related
+        self.is_ending = False
+        self.died_of_hunger = False
+        self.left_home = False
+        self.bought_grocery = False
+        self.ate_mice = False
+        self.cult_scared = False
+        self.join_cult = False
+        self.cult_leader = False
 
     def time_change(self, number):
         total_change = int(str(self.time)[-2:]) + number
@@ -48,9 +54,11 @@ class GlobalVariables:
         elif hunger > 0:
             print("You feel less hungry now.")
         #remove the line below after finish debugging
-        print("Hunger level:", player.hunger_level, "self.start_time value:", self.start_time)
+        #print("Hunger level:", player.hunger_level, "self.start_time value:", self.start_time)
         if player.hunger_level <= 0:
             self.is_ending = True
+            self.died_of_hunger = True
+            return self.check_ending()
         return player.hunger_level
 
     def hunger_change(self):
@@ -64,7 +72,7 @@ class GlobalVariables:
     def sanity_check(self, number):
         player.sanity += number
         #remove the line below after finish debugging
-        print("Current Sanity:", player.sanity)
+        #print("Current Sanity:", player.sanity)
         if player.sanity < 80:
             print('you feel a bit uneasy')
         if player.sanity < 50:
@@ -74,45 +82,103 @@ class GlobalVariables:
         
     def check_ending(self):
         if self.is_ending:
-            return end.test_ending()
+            clear()
+            if self.died_of_hunger:
+                return end.hunger()
+            elif self.left_home == False:
+                return end.hermit()
+            elif self.join_cult:
+                 return end.joined_cult()
+            elif self.cult_leader:
+                return end.become_cult_leader()
+            elif self.bought_grocery:
+                return end.normal_ending()
+            else:
+                return end.low_sanity()
+
 
     def invalid_input(self):
         print('please enter a valid response')
 
 class Player:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self):
+        self.name = ''
         self.hunger_level = 50
         self.sanity = 100
         self.carrying_monty = False
-        self.death = False
         self.morning_routine = False
         self.filter = False
-        self.has_grocery = False
 
+    def change_name(self):
+        self.name = input("Name your character:\n")
+        name_confirm = input('Your character name is {0}, right? (Y/N) '.format(self.name)).upper()
+        while name_confirm == 'N':
+            self.name = input("Name your character:\n")
+            name_confirm = input('Your character name is {0}, right? (Y/N) '.format(self.name)).upper()
+        clear()
 
-class Location:
-    def __init__(self):
-        pass
+#All Dialogues
+apartment_location_change = {
+"room to kitchen": "you moved to the kitchen/living room",
+"kitchen to room": "You went back to your room",
+"bed": "You walked away form your bed.",
+"tank": {
+    "carrying Monty": "It\'s probably a bad idea to carry Monty with you right now.",
+    "other": "You left Monty alone for now."
+        },
+"bathroom to kitchen": "you returned to the kitchen.",
+"leave apartment": {
+    "clean": "You left your apartment. It\'s time for grocery shopping.",
+    "mess": "You left your apartment in your pajamas and slippers. You probably smell a bit, too."},
+}
 
-class Apartment:
+apartment_flavor_text = {
+    "room": {"first time":  "You looked around your room. There\'s your bed, your pet snake Monty\'s tank, and your desk.",
+    "other": "You are back at the center of your room."
+    },
+    "desk": "Your computer is on. It\'s on almost 24/7. Other than that, nothing else caught your attention here.",
+    "bed": {
+        "messy": "Your bed is messy. You should probably make your bed.",
+        "tidy": "Your bed is now tidy."
+        },
+    "kitchen": {
+        "first time" : "You are now in your kitchen/living room. The bathroom is to your right- that\'s also where you do half of your morning routine. The apartment door is in the front.",
+        "other": "You are now in your kitchen/living room."
+    },
+    "tank": {
+        "Monty in": "You looked at the tank. Your pet snake, Monty, a ball python, is napping in its hide.",
+        "Monty out": "Monty is now resting on your arm."
+    },
+    "bathroom": "You are in the bathroom.",
+    "fridge" : {
+        "first time": "You opened the fridge door. There are a few soda cans left here, but other than that, there is nothing to eat here. Maybe there\'s still frozen food left in your freezer?",
+        "other": "You stand in front of your fridge, a fridge without any human food.",
+        "ate mice": "Your fridge is now out of food, including snake food."
+    },
+    "freezer": {
+        "first time" : "You opened the freezer door. There are... some dead, frozen mice in your freezer. They are Monty\'s food.",
+        "other": "here are some frozen mice in your freezer.",
+        "empty": "Your freezer is now empty."
+        }
+}
+
+class Apartment(GlobalVariables):
     def __init__(self):
         self.first_time_bedroom = True
         self.first_time_kitchen = True
         self.first_time_check_fridge = True
         self.bed_is_messy = True
         self.check_freezer = False
-        self.ate_mice = False
 
 #Main actions - Bedroom
     def check_bedroom(self):
         while event.is_ending == False:
+            self.location = "apartment"
             if self.first_time_bedroom:
-                print("You looked around your room. There's your bed, your pet snake Monty's tank, and your desk.")
-                self.first_time = False
+                print(apartment_flavor_text["room"]["first time"])
+                self.first_time_bedroom = False
             else:
-                print("You are back at the center of your room.")
-                print("===============================")
+                print(apartment_flavor_text["room"]["other"])
             action = input("""
     pick an action:
     [1]check desk       [4]go to kitchen/living room
@@ -120,6 +186,7 @@ class Apartment:
     [3]check tank       [6]"......"
         """)
             action = int(action)
+            clear()
             if action == 1:
                 return self.desk()
             elif action == 2:
@@ -127,7 +194,7 @@ class Apartment:
             elif action == 3:
                 return self.tank()
             elif action == 4:
-                print("you moved to the kitchen/living room")
+                print(apartment_location_change['room to kitchen'])
                 return self.check_kitchen()
             elif action == 5:
                 print("you gazed at the ceiling.")
@@ -146,23 +213,24 @@ class Apartment:
 
     def desk(self):
         event.check_ending()
-        print("Your computer is on. It's on almost 24/7. Other than that, nothing else caught your attention here.")
+        print(apartment_flavor_text['desk'])
         return self.check_bedroom()
 
     def bed(self):
         while event.is_ending == False:
             if self.bed_is_messy:
-                print("Your bed is messy. You should probably make your bed.")
+                print(apartment_flavor_text["bed"]["messy"])
             else:
-                print("Your bed is now tidy.")
+                print(apartment_flavor_text["bed"]["tidy"])
             action = input("""
         pick an action:
         [1]sleep                  [4]"..."
         [2]make bed               [5]"......"
         [3]walk away
             """)
+            clear()
             if action == '1':
-                print("Screw responsibilities. it's time for a nap,")
+                print("Screw responsibilities. it's time for a nap.")
                 event.time_change(60)
                 self.bed_is_messy = True
                 return self.bed()
@@ -194,20 +262,21 @@ class Apartment:
     def tank(self):
         while event.is_ending == False:
             if not player.carrying_monty:
-                print("You looked at the tank. Your pet snake, Monty, a ball python, is napping in its hide.")
+                print(apartment_flavor_text["tank"]["Monty in"])
                 action = input("""
         pick an action:
         [1]take Monty out of the tank        [3]"..."
         [2]walk away                         [4]"......"
             """)
             else:
-                print("Monty is now resting on your arm.")
+                print(apartment_flavor_text["tank"]["Monty out"])
                 print("Monty: pssssssst.")
                 action = input("""
         pick an action:
         [1]put Monty back in the tank        [3]"..."
         [2]walk away                         [4]"......"
             """)
+            clear()
             if action == '1':
                 if player.carrying_monty:
                     print("Monty: psssssssst")
@@ -254,17 +323,19 @@ class Apartment:
 #Main actions - Kitchen
     def check_kitchen(self):
         while event.is_ending == False:
+            self.location = "apartment"
             if self.first_time_kitchen:
-                print("You are now in your kitchen/living room. The bathroom is to your right- that's also where you do half of your morning routine. The apartment door is in the front.")
+                print(apartment_flavor_text["kitchen"]["first time"])
                 self.first_time_kitchen = False
             else:
-                print("You are now in your kitchen/living room.")
+                print(apartment_flavor_text["kitchen"]["other"])
             action = input("""
         pick an action:
         [1]check the fridge                   [4]leave the apartment
         [2]go to the bathroom                 [5]"..."
         [3]go to the bedroom                  [6]"......"
             """)
+            clear()
             if action == '1':
                 return self.fridge()
             elif action == '2':
@@ -287,13 +358,15 @@ class Apartment:
 
     def bathroom(self):
         while event.is_ending == False:
-            print("You are in the bathroom.")
+            self.location = "apartment"
+            print(apartment_flavor_text["bathroom"])
             action = input("""
         pick an action:
         [1]Get ready for the day            [3]"..."
         [2]Go to kitchen/living room        [4]"......"
             """)
             action = int(action)
+            clear()
             if action == 1:
                 if not player.morning_routine:
                     print("......")
@@ -305,7 +378,7 @@ class Apartment:
                     print("You've already done that. It is now time for grocery shopping.")
                 return self.bathroom()
             elif action == 2:
-                print("you returned to the kitchen.") 
+                print(apartment_location_change["bathroom to kitchen"]) 
                 return self.check_kitchen()
             elif action == 3:
                 print("You gaze at the mirror. Do you always look like that?")
@@ -324,17 +397,18 @@ class Apartment:
     def fridge(self):
         while event.is_ending == False:
             if self.first_time_check_fridge:
-                print("""You opened the fridge door. There are a few soda cans left here, but other than that, there is nothing to eat here. Maybe there's still frozen food left in your freezer?""")
+                print(apartment_flavor_text["fridge"]["first time"])
                 self.first_time_check_fridge = False
-            elif self.ate_mice:
-                print("Your fridge is now out of food, including snake food.")
+            elif event.ate_mice:
+                print(apartment_flavor_text["fridge"]["ate mice"])
             else:
-                print("You stand in front of your fridge, a fridge without any human food.")
+                print(apartment_flavor_text["fridge"]["other"])
             action = input("""
     pick an action:
     [1]check freezer               [3]"..."
     [2]walk away                   [4]"......"
             """)
+            clear()
             if action == '1':
                 return self.freezer()
             elif action == '2':
@@ -355,13 +429,13 @@ class Apartment:
     def freezer(self):
         while event.is_ending == False:
             if not self.check_freezer:
-                print("You opened the freezer door. There are... some dead, frozen mice in your freezer. They are Monty's food.")
+                print(apartment_flavor_text["freezer"]["first time"])
                 self.check_freezer = True
-            elif self.ate_mice:
-                print("Your freezer is now empty.")
+            elif event.ate_mice:
+                print(apartment_flavor_text["freezer"]["empty"])
             else:
-                print("There are some frozen mice in your freezer.")
-            if self.ate_mice:
+                print(apartment_flavor_text["freezer"]["other"])
+            if event.ate_mice:
                     action = input("""
         pick an action:
         [1]check freezer               [3]"..."
@@ -373,14 +447,16 @@ class Apartment:
         [1]eat the mice                [3]"..."
         [2]walk away                   [4]"......"
             """)
+            clear()
             if action == '1':
-                if not self.ate_mice:
-                    eat_mice = input("An intrusive thought flashes in your mind. Do you actually want to do it?(Y/N)").upper()
+                if not event.ate_mice:
+                    eat_mice = input("An intrusive thought flashes in your mind. You thought of eating the dead mice. Do you actually want to do it?(Y/N) ").upper()
                     if eat_mice == "Y":
+                        
                         print("You cooked the mice and ate them. It was a very unpleasant feeling.")
                         event.sanity_check(-50) 
                         event.hunger_level(50)
-                        self.ate_mice = True
+                        event.ate_mice = True
                     elif eat_mice == "N":
                         print("That was some ridiculous thoughts. You wouldn't have done it even if you're too hungry, right?")
                 else:
@@ -389,14 +465,14 @@ class Apartment:
             elif action == '2':
                 return self.check_kitchen()
             elif action == '3':
-                if not self.ate_mice:
+                if not event.ate_mice:
                     print('you gaze at the dead mice. The freezing air makes you feel a bit chilly. Maybe you should close the freezer door before your electricity bills go up.')
                 else:
                     print("You gaze at the empty freezer. Nothing but the hollow cold air blows on your face.")
                 event.time_change(15)
                 return self.freezer()
             elif action == '4':
-                if not self.ate_mice:
+                if not event.ate_mice:
                     print('You stare at the cold, immobile corpses of some mice. The freezing air is blasting on your face. You are definitely not a stranger to these dead critters because of Monty. But why do they make you feel so uncomfortable?')
                     event.sanity_check(-5)
                 else:
@@ -411,14 +487,14 @@ class Apartment:
     def leave_apartment(self):
         if event.left_home == False:
             if player.morning_routine:
-                print("You left your apartment. It's time for grocery shopping.")
+                print(apartment_location_change["leave apartment"]["clean"])
                 event.left_home = True
                 return street.walking()
             else:
                 print("You are not in a presentable state at all. You haven't even brushed your teeth. Maybe you should go to the bathroom and get ready for your day. ")
                 leave = input("Are you sure you want to go outside in your current state? (Y/N) ").upper()
                 if leave == "Y":
-                    print("You left your apartment in your pajamas and slippers. You probably smell a bit, too.")
+                    print(apartment_location_change["leave apartment"]["mess"])
                     event.sanity_check(-10)
                     event.left_home = True
                     return street.walking()
@@ -430,8 +506,9 @@ class Apartment:
 
 
 #Street and cult
-class Street(Location):
+class Street(GlobalVariables):
     def __init__(self):
+        self.location = "street"
         self.way_to_grocery = 0
         # 0: home, 5: cult 10: grocery store
         self.first_time_cult = False
@@ -452,6 +529,7 @@ class Street(Location):
         self.cult_intimidation = 0
         self.cult_interrupted = False
         self.cult_uneasy = 0
+        self.cult_finish_talking = False
 
     def walking(self):
         while event.is_ending == False:
@@ -462,6 +540,7 @@ class Street(Location):
         [2]go home             [4]"......"
         """)
             action = int(action)
+            clear()
             if action == 1:
                 print("You walk down the street.")
                 event.time_change(5)
@@ -471,12 +550,13 @@ class Street(Location):
                 else:
                     return self.midway_evening()
             elif action == 2:
-                if store.bought_grocery == False:
+                if event.bought_grocery == False:
                     print("The outside world is too much for you, afterall.")
                     return home.check_kitchen() 
                 else: 
                     event.is_ending = True
-                    return home.check_kitchen() 
+                    clear()
+                    return end.normal_ending() 
                     #change this directly to the ending later
             elif action == 3:
                 print("You stand idlly on the street")
@@ -492,6 +572,9 @@ class Street(Location):
 
     def midway(self):
         while event.is_ending == False:
+            self.location = "street"
+            if self.cult_intimidation >= 10 or self.cult_uneasy >= 4 :
+                event.cult_scared = True
             if not self.first_time_cult and self.cult_intimidation < 10:
                 print('You see a couple of people standing on the sidewalk. They all wear robes for some reason. There are some signs next to them.')
             elif  self.cult_intimidation >= 10:
@@ -509,6 +592,7 @@ class Street(Location):
     [3]go home
         """)
             action = int(action)
+            clear()
             if action == 1:
                 print('"The world will end soon! The entropy of the universe is approaching its limits, and your actions only escalate the process." \n "Join us. We will face the end together, and we will meet again in the void."')
                 if self.read_sign == False:
@@ -530,7 +614,7 @@ class Street(Location):
                 pass 
             elif action == 4:
                 if self.read_sign == False:
-                    print('You gaze at the group. It doesn\'t seem that they want to enegage in conversations with you yet.')
+                    print('You gaze at the group. It doesn\'t seem that they want to enegage in conversations with you yet. Maybe they\'ll talk to you once you read the signs?')
                     event.time_change(5)
                     return self.midway()
                 elif self.cult_intimidation >= 10 or self.cult_uneasy >= 4:
@@ -541,6 +625,7 @@ class Street(Location):
                 else:
                     print("???: It seems that you are interested in our orginzation.")
                     print("One of the members starts a conversation with you.")
+                    print("The member begins to tell you more about the organization.")
                     return self.cult()
                 return self.midway()
             elif action == 5:
@@ -551,15 +636,16 @@ class Street(Location):
                         event.time_change(10)
                         return self.midway()
                 elif self.cult_intimidation >= 10 or (self.cult_uneasy >= 4):
-                        print('???: Can you... leave us alone, please?')
-                        print("One of the members finally speaks. His voice is shaking.")
-                        return self.midway()
+                    print('???: Can you... leave us alone, please?')
+                    print("One of the members finally speaks. His voice is shaking.")
+                    return self.midway()
                 elif self.cult_interrupted == True:
                     print('It doesn\'t seem like they want to talk to you anymore.')
                     return self.midway()
                 else:
                     print("???: Are you... Interested in hearing about our cause?")
                     print("One of the members hesitates before he talks to you.")
+                    print("The member begins to tell you more about the organization.")
                     return self.cult()
             else:
                 event.invalid_input()
@@ -568,6 +654,7 @@ class Street(Location):
 
     def midway_evening(self):
         while event.is_ending == False:
+            self.location = "street"
             if self.first_time_cult == False:
                 print("You are halfway to the grocery store. Only some pedestrians and a few cars are on the street.")
             else:
@@ -578,17 +665,18 @@ class Street(Location):
     [2]go home                 [5]"......"
         """)
             action = int(action)
+            clear()
             if action == 1:
                 print('You keep walking down the street.')
                 event.time_change(5)
                 return store.grocery_store()
             elif action == 2:
-                if store.bought_grocery == False:
+                if event.bought_grocery == False:
                     print("The outside world is too much for you, afterall.")
                     return home.check_kitchen() 
                 else: 
                     event.is_ending = True
-                    return home.check_kitchen() 
+                    return event.check_ending()
                 return 
             elif action == 3:
                 print('You stand in the middle of the street, looking at people walking by.')
@@ -604,21 +692,19 @@ class Street(Location):
         event.check_ending()
 
     def cult(self):
-        print("The member begins to tell you more about the cult.")
-        while (self.cult_dialogue_counter < len(self.cult_dialogue)): 
+        while self.cult_dialogue_counter < 9 : 
             if self.cult_uneasy >= 4:
                 print('"……" the person took a step back as they stopped talking. "If you don\'t believe us or are in a hurry, you could\'ve let me know. I would have let you go…"')
                 return self.midway()
                 break
             else:
                 print("???:", self.cult_dialogue[self.cult_dialogue_counter])
-                self.cult_dialogue_counter += 1
-                event.time_change(10)
                 action = input("""
         Pick an action:
         [1]Go home                      [3]"..."
         [2]Go to the Grocery Store      [4]"......"
                 """)
+                clear()
                 if action == "1":
                     print("You walk away from the enthuiastic member, they seem to be shocked by the fact that you just walked away.")
                     print("You begin to head home.")
@@ -633,52 +719,65 @@ class Street(Location):
                     break
                 elif action == "3":
                     print("You continue to listen to them talking.")
+                    self.cult_dialogue_counter += 1
+                    event.time_change(10)                    
                 elif action == "4":
                     print("The person hesitates a bit, and then keep talking.")
                     self.cult_uneasy += 1
+                    self.cult_dialogue_counter += 1
+                    event.time_change(10)    
                 else:
                     event.invalid_input()
-                    return self.freezer()
-        if self.cult_dialogue_counter == 9:
-            if player.sanity <= 40:
+                    return self.cult()
+        if player.sanity <= 40:
+            if self.cult_finish_talking == False:
                 print('"...!"')
                 print('The cult member notices and stops themselves from talking.')
                 print('"There is somthing in your eyes... I can see the void in your eyes!"')
                 print("\"In the propercy, it says a person with hollow eyes like your will lead us to the right way.\"")
                 print('"Please, you must join us and become our leader."')
-                become_cult_leader = input("Will you become their leader?(Y/N)").upper()
-                if become_cult_leader == "Y":
-                    print("You nod. The group seems happy.")
-                    event.is_ending = True
-                elif become_cult_leader == "N":
-                    print("You shake your head. The group seems disappointed, but they respect your decision.")
-                    print("???: If you ever change your mind, please come back and guide us...")
-                return self.cult()
+                self.cult_finish_talking = True
             else:
-                join_cult = input("Now that you have heard about our orginization, would you like to participate in our next meeting? It will happen soon. (Y/N)").upper()
-                if join_cult == 'Y':
-                    print("You nodded. They hand you a card ")
-                    event.is_ending = True
-                    return self.midway()
-                elif join_cult == 'N':
-                    print("You shake your head. \"Very well, but we will be here if you change your mind.\"")
-                    return self.midway()
-                else:
-                    event.invalid_input()
-                    return self.cult()
+                print('???:"You are back! Did you change your mind?"')
+            become_cult_leader = input("Will you become their leader?(Y/N)").upper()
+            if become_cult_leader == "Y":
+                print("You nod. The group seems happy.")
+                event.is_ending = True
+                event.cult_leader = True
+                return self.midway()
+            elif become_cult_leader == "N":
+                print("You shake your head. The group seems disappointed, but they respect your decision.")
+                print("???: If you ever change your mind, please come back and guide us...")
+            else:
+                event.invalid_input()
+                return self.cult()
+            return self.midway()
+        else:
+            join_cult = input("\"Now that you have heard about our orginization, would you like to come with us to our next meeting?\" (Y/N)").upper()
+            if join_cult == 'Y':
+                print("You nodded. They hand you a card. There's an address on it. ")
+                event.is_ending = True
+                event.join_cult = True
+                return self.midway()
+            elif join_cult == 'N':
+                print("You shake your head. \"Very well, but we will be here if you change your mind.\"")
+                return self.midway()
+            else:
+                event.invalid_input()
+                return self.cult()
 
 
 #Grocery Store
 
-class GroceryStore(Location):
+class GroceryStore(GlobalVariables):
     def __init__(self):
         self.weight = 0
         self.went_to_store = False
         self.have_grocery = False
-        self.bought_grocery = False
     
     def grocery_store(self):
         while event.is_ending == False:
+            self.location = "store"
             if event.time < 2000:
                 print("You arrived at the grocery store.")
                 action = input("""
@@ -688,12 +787,13 @@ class GroceryStore(Location):
         [3]Get snacks                  [6]"......"
                 """)
                 action = int(action)
+                clear()
                 if action == 1:
                     print("You pick up some essential groceries. It will last you for about a week.") 
                     self.weight += 10;
                     self.have_grocery = True
                 elif action == 2:
-                    print("You pick up some essential groceries. It will last you for about a week.")
+                    print("You pick up enough grocery to last you 2 weeks.")
                     self.weight += 20; 
                     self.have_grocery = True
                 elif action == 3:
@@ -704,7 +804,7 @@ class GroceryStore(Location):
                     if self.have_grocery:
                         print("You paid for your groceries, and left the store")
                         event.time_change(30)
-                        self.bought_grocery = True
+                        event.bought_grocery = True
                     else:
                         print("You left the store without buying anything.")
                         event.time_change(5)
@@ -728,6 +828,7 @@ class GroceryStore(Location):
                                 [3]"......"
                 """)
                 action = int(action)
+                clear()
                 if action == 1:
                     print("You decided to go home.")
                     event.is_ending = True
@@ -745,29 +846,58 @@ class GroceryStore(Location):
                     return self.grocery_store()
         event.check_ending()
 
-class Endings:
+class Endings(GlobalVariables):
     def test_ending(self):
         print("Everything works until this point.")
 
     def normal_ending(self):
+        clear()
         #you get here if you act like a normal human: get ready for leaving, not join the cult, get grocery, and get home
         print("You arrived home with food. You then make and eat your meal. Another ordinary day has passed.")
+        if event.ate_mice:
+            print("...Except the fact that you ate some frozen mice to stop feeling hungry.You need to get more for Monty at some point.")
+        if event.cult_scared:
+            print("You continue your life as normal. There isn't any changes to the world. Except, you haven't seen that group of weird people in this area again.")
+
     def low_sanity(self):
-        print("You wander on the street. You survived today, but what about tomorrow?")
+        clear()
+        if event.location == "street":
+            print("You wander aimlessly on the street. You survived today, but what about tomorrow?")
+        if event.location == "apartment":
+            print("You are back in your apartment. You didn't get any groceries, but somehow you survived the day.")
+            print("Eventually you will have to leave for food again, whether it's for Monty or yourself.")
+        print("But that doesn't matter anymore. You feel a strong attraction towards the void. You don't know what the void is, nor you can describe it, but you know it's there. It'll always be there for you.")
 
     def hunger(self):
-        print("You died of starvation.")
+        clear()
+        if event.location == "apartment":
+            print("Your surrounding fades away from you.")
+            print("A few days later, you are found dead in your own apartment.")
+        elif event.location == "street":
+            print("You collapsed on the street.")
+            print("When you wake up again, you are in a hospital. Apparently some pedestrian saw you fall on the street, and you were rushed to the hospital.")
 
     def hermit(self):
-        print("You refused to leave your apartment for food. You managed to survive for the day, but at what costs? What about tomorrow?")
+        clear()
+        print("It's currently midnight. You are still in your apartment. You never left during the day, and you somehow found a way to survive -- at the cost of your pet snake's food.")
+        print("But the outside world is too dangerous. You don't want to leave.")
 
-    def join_cult(self):
+    def joined_cult(self):
+        clear()
         print("You follow the group to a building. Inside the building, everyone sits in a circle and talk to each other.")
-        print("After some introduction, you are part of the orginization now. They also get you a nice meal.")
+        print("After some introduction, they deem you a member of the orginization. As a welcoming party, they make you a nice meal.")
         print("You don't have to worry about groceries for now.")
 
-    def cult_leader(self):
+    def become_cult_leader(self):
+        clear()
         print('"We would like to introduce you to our new and only leader, {0}. Under their leadership, we will lead the world to salvation."'.format(player.name))
+        print("You stand in front of a group of people in robes. They are waiting for you to say something.")
+        print('"......"')
+        print('Your look at everyone with your hollow eyes.')
+        print('A month has passed since you agreed to become their leader.')
+        print('Surprisingly, there isn\'t much for you to do here. Everything is prepared for you. Monty\'s new and fancy tank sits next to you. It seems that the organization is worshipping Monty as well, for some reason.')
+        print('At least you don\'t have to worry about getting groceries now.')
+
 
 
 
@@ -783,27 +913,26 @@ print("""
 
 """)
 
-name = input("Name your character:\n")
-
 # initialization
-player = Player(name)
-home = Apartment()
 event = GlobalVariables()
+player = Player()
+home = Apartment()
 street = Street()
 store = GroceryStore()
 end = Endings()
+player = Player()
 
-name_confirm = input('Your character name is {0}, right? (Y/N) '.format(player.name)).upper()
-while name_confirm == 'N':
-    player.name = input("Name your character:\n")
-    name_confirm = input('Your character name is {0}, right? (Y/N) '.format(player.name)).upper()
-clear()
+player.change_name()
 print("""
 You woke up in your room.
 It's currently early morning on a Saturday. Your stomach rumbles. It's time for breakfast.... Well, only if you didn't run out of food. You probably should stay on top of your grocery shopping.
 So it's time to get some food, and probably groceries as well.
 It's time to step on a journey—a journey to the grocery store.
 """)
+
 home.check_bedroom()
 
-x = input('current testing ends.press enter to exit.')
+x = input("""
+This is the end of the game. Thanks for playing!
+(press Enter to exit)
+""")
