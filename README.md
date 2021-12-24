@@ -1,3 +1,4 @@
+# You Woke up in Your Room on a Saturday Morning
 
 <br>
 
@@ -9,34 +10,39 @@
 
 <br>
 
-# About the game
+## About the game
 
 This is a text-based adventure game written in Python. Your goal is to buy groceries...  
 Or is it?
 
 <br>
 
-# Install / How to play
+## Install / How to play
 
-## If you have python installed
+**If you have python installed**
+
 Run "you-woke-up-in-your-room.py" to start the game. Or use the command line to access the game.
 
-## If you don't have python installed
+**If you don't have python installed**
+
+
 Run "you-woke-up-in-your-room.exe"  to start the game. 
 
 <br>
 
-# Controls
+## Controls
 enter the number or letter as prompted to advance the game.
 
 <br>
 
-# Bugs? Feedbacks?
+## Bugs? Feedbacks?
 
-## bug reports
+**bug reports**
+
 If the game crashes (the window disappears), it means something went wrong (I probably forgot a variable somewhere.)
 
 Please let me know if you encounter any bugs in the game, and when you do, let me know at what point 
 
-## Feedbacks
+**Feedbacks**
+
 If you have any feedbacks about the game (how I can improve the codes) , feel free to leave a comment as well.
