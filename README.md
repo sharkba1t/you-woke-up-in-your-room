@@ -2,7 +2,8 @@
 <br>
 
     You woke up in your room.
-    It's currently early morning on a Saturday. Your stomach rumbles. It's time for breakfast.... Well, only if you didn't run out of food. You probably should stay on top of your grocery shopping.
+    It's currently early morning on a Saturday. Your stomach rumbles. It's time for breakfast....  
+    Well, only if you didn't run out of food. You probably should stay on top of your grocery shopping.
     So it's time to get some food, and probably groceries as well.
     It's time to step on a journey—a journey to the grocery store.
 
