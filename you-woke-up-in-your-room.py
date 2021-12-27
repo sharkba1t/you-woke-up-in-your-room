@@ -4,8 +4,6 @@ sys.stdout.write("\x1b[8;{rows};{cols}t".format(rows=30, cols=100))
 
 #For terminal
 clear = lambda: os.system('cls')
-width, height = os.get_terminal_size()
-
 #Global Variables
 
 class GlobalVariables:
@@ -27,14 +25,12 @@ class GlobalVariables:
     def time_change(self, number):
         total_change = int(str(self.time)[-2:]) + number
         hour = total_change // 60
-        #I don't understand my own codes but I made base 60 work
         if (total_change >= 60):
             self.time += hour * 40 + number
         else:
             self.time += number
         print("current time: {0}:{1}".format(str(self.time)[:-2],str(self.time)[-2:]))
         self.hunger_change()
-        #make these only appear once
         if 800 <= self.time < 1200:
             print("It's currently morning.")
         elif 1200 <= self.time < 1300:
@@ -53,8 +49,6 @@ class GlobalVariables:
             print("Your stomach rumbles a bit.")
         elif hunger > 0:
             print("You feel less hungry now.")
-        #remove the line below after finish debugging
-        #print("Hunger level:", player.hunger_level, "self.start_time value:", self.start_time)
         if player.hunger_level <= 0:
             self.is_ending = True
             self.died_of_hunger = True
@@ -71,8 +65,6 @@ class GlobalVariables:
 
     def sanity_check(self, number):
         player.sanity += number
-        #remove the line below after finish debugging
-        #print("Current Sanity:", player.sanity)
         if player.sanity < 80:
             print('you feel a bit uneasy')
         if player.sanity < 50:
